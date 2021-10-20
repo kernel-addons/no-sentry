@@ -1,0 +1,6 @@
+{
+	"name": "No Sentry",
+	"id": "no-sentry",
+    "description": "Make the discord sentry be quiet about your bad code.",
+	"dependencies": []
+}
