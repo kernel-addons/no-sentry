@@ -18,7 +18,7 @@ app.whenReady().then(() => {
                 const data = [];
                 res.on("data", d => data.push(d));
                 res.on("end", () => {
-                    if (sentryURL) return;
+                    if (sentryURL) return callback({});
                     const body = data.join("");
                     queue.delete(opts.url);
 
