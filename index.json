@@ -1,6 +1,9 @@
 {
 	"name": "No Sentry",
-	"id": "no-sentry",
-	"description": "Make the discord sentry be quiet about your bad code.",
-	"dependencies": []
+	"id": "strencher.no-sentry",
+	"description": "Nuke discord's sentry and speed up the client.",
+	"dependencies": [],
+	"config": {
+		"MAX_ATTEMPTS": 10
+	}
 }
