@@ -1,7 +1,27 @@
 const {app} = require("electron");
-const {config: {MAX_ATTEMPTS, DELETE_HEADERS, APPEND_HEADERS}} = require("./index.json");
+const Module = require("module");
+const {config: {
+    MAX_ATTEMPTS = 10,
+    DELETE_HEADERS = [],
+    APPEND_HEADERS = {},
+    BLOCKED_DOMAINS = []
+}} = require("./index.json");
 let sentryRegex = /ignoreErrors.*BetterDiscord/si;
 let sentryURL = null;
+
+// TODO: Implement better searching algorithm that works when discord updates the chunk url during runtime.
+
+const oLoad = Module._load;
+const fakeSentry = {
+    init: () => {},
+    captureException: console.error
+};
+
+Module._load = function (mod) {
+    if (mod.indexOf("sentry") > -1) return fakeSentry;
+
+    return oLoad.apply(this, arguments);
+};
 
 const showConsoleLog = (tries, win) => process.nextTick(() => {
     win.webContents.executeJavaScript(`(() => {
@@ -20,14 +40,31 @@ app.whenReady().then(() => {
     app.on("browser-window-created", (_, win) => {
         let tries = 0;
         let queue = new Set();
+
         win.webContents.session.webRequest.onHeadersReceived((opts, callback) => {
             const {responseHeaders} = opts;
+            const currentHeaders = Object.keys(responseHeaders);
+
             for (const header in APPEND_HEADERS) {
-                responseHeaders[header] ??= APPEND_HEADERS[header];
+                // Checking case sensitive for the header, otherwise we run into issues with duplicate headers.
+                if (currentHeaders.some(h => h.toLowerCase() === header.toLowerCase())) continue;
+
+                responseHeaders[header] = APPEND_HEADERS[header];
             }
 
             for (const header of DELETE_HEADERS) {
-                if (responseHeaders[header]) delete responseHeaders[header];
+                const actualName = currentHeaders.find(h => h === header.toLowerCase());
+                if (!actualName) continue;
+
+                delete responseHeaders[actualName];
+            }
+
+            for (const matcher of BLOCKED_DOMAINS) {
+                const regex = new RegExp(matcher);
+                
+                if (regex.test(opts.url)) {
+                    return callback({cancel: true, responseHeaders});
+                }
             }
 
             if (sentryURL) {
@@ -65,6 +102,7 @@ app.whenReady().then(() => {
 
             queue.add(opts.url);
             tries++;
+            if (tries === MAX_ATTEMPTS) console.warn("Could not find sentry chunk.");
         });
     });
 });
