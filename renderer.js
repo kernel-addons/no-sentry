@@ -22,7 +22,7 @@ async function init() {
    };
 
    Object.defineProperty(window.webpackChunkdiscord_app, "push", {
-      set: (value) => { data.push = value; },
+      set: (value) => {data.push = value;},
       get: () => function (payload) {
          if (data.blocked) {
             return data.push.apply(this, [payload]);
