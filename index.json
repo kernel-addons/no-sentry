@@ -4,7 +4,7 @@
    "description": "Nuke discord's sentry and speed up the client.",
    "dependencies": [],
    "config": {
-      "EXPERIMENTAL_SENTRY_BLOCK": true,
+      "EXPERIMENTAL_SENTRY_BLOCK": false,
       "MAX_ATTEMPTS": 10,
       "APPEND_HEADERS": {
          "access-control-allow-origin": "*"
