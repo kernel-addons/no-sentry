@@ -4,7 +4,8 @@ const {config: {
     MAX_ATTEMPTS = 10,
     DELETE_HEADERS = [],
     APPEND_HEADERS = {},
-    BLOCKED_DOMAINS = []
+    BLOCKED_DOMAINS = [],
+    EXPERIMENTAL_SENTRY_BLOCK = false
 }} = require("./index.json");
 let sentryRegex = /ignoreErrors.*BetterDiscord/si;
 let sentryURL = null;
@@ -61,16 +62,20 @@ app.whenReady().then(() => {
 
             for (const matcher of BLOCKED_DOMAINS) {
                 const regex = new RegExp(matcher);
-                
+
                 if (regex.test(opts.url)) {
                     return callback({cancel: true, responseHeaders});
                 }
             }
 
+            if (EXPERIMENTAL_SENTRY_BLOCK) {
+                return callback({cancel: false, responseHeaders});
+            }
+
             if (sentryURL) {
                 const isSentry = sentryURL === opts.url;
                 if (isSentry) showConsoleLog(tries, win);
-                
+
                 return callback({cancel: isSentry, responseHeaders});
             }
 
@@ -78,7 +83,7 @@ app.whenReady().then(() => {
             if (tries > MAX_ATTEMPTS) return callback({responseHeaders});
             if (opts.resourceType !== "script") return callback({responseHeaders});
             if (opts.url.indexOf("discord.com/assets") < 0) return callback({responseHeaders});
-            
+
             require("https").get(opts.url, (res) => {
                 const data = [];
                 res.on("data", d => data.push(d));
@@ -93,7 +98,7 @@ app.whenReady().then(() => {
                         showConsoleLog(tries, win);
                         callback({cancel: true, responseHeaders});
                         queue.clear();
-                        
+
                     } else {
                         callback({responseHeaders});
                     }
